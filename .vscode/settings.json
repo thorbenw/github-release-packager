@@ -1,0 +1,9 @@
+{
+  "editor.foldingStrategy": "indentation",
+  "editor.snippetSuggestions": "top",
+  "editor.tabSize": 2,
+  "editor.detectIndentation": false,
+  "standard.semistandard": true,
+  "standard.trace.server": "verbose",
+  "standard.usePackageJson": false
+}

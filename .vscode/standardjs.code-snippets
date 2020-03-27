@@ -1,0 +1,16 @@
+{
+	"Folding Region Start (JavaScript Standard Style)": {
+		"scope": "javascript",
+		"prefix": "#region",
+		"body": [
+			"// #region "
+		]
+	},
+	"Folding Region End (JavaScript Standard Style)": {
+		"scope": "javascript",
+		"prefix": "#endregion",
+		"body": [
+			"// #endregion"
+		]
+	}
+}
