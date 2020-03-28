@@ -16,6 +16,12 @@ use with JavaScript in node without requiring it to be installed locally and I
 wasn't up to care about that, I just wanted to install an npm package and go
 ahead.
 
+<span style="color:red; font-size:150%">
+The current status of this project is 'as needed to package `pandoc`'. Basic
+things might still change, but I'm eager to provide accoring semantic versioning
+to save anyone from getting into trouble due to breaking changes.
+</span>
+
 Usage
 -----
 Create a new npm package for the GitHub project you want to wrap and install the
@@ -108,7 +114,7 @@ the following properties, all of which have to be `async function`s:
 if your IDE supports it, place a JsDoc comment right above the `github` export
 to help you implementing the plugin, as it exists in the following example.
 ```javascript
-/** @type {import('github-release-packager').GitHubReleasePlugin} */
+/** @type {import('github-release-packager').GitHubReleasePackagerPlugin} */
 exports.github = {
   downloadURL: async (repository, version) => {
     // return a URL for downloading the requested binaries version
@@ -154,6 +160,8 @@ by e.g. setting up a scheduled GitHub Actions Workflow that checks whether an
 updated release version is available (by simply running 'npm run build'), and if
 so, commit and publish the new build.
 
-The current status of this project is 'as needed to package `pandoc`', things
-might still change, but I'm eager to provide accoring semantic versioning to
-save anyone from trouble due to breaking changes.
+ToDos
+-----
+- Rename the plugin methods
+  - They're ugly and inconsistent
+  - This means a breaking change, so do it _before_ the first release!
