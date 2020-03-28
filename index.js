@@ -39,7 +39,7 @@ const deasync = require('deasync');
  */
 
 /**
- * @typedef {object} GitHubReleasePlugin
+ * @typedef {object} GitHubReleasePackagerPlugin
  * @property {GitHubReleaseDownloadURLCallback} [downloadURL]
  * @property {GitHubReleaseProcessBinaryCallback} [processBinary]
  * @property {GitHubReleaseBinariesCallback} [binaries]
@@ -125,16 +125,16 @@ function getPackage (options) {
 }
 
 /**
- * @param {GitHubReleasePlugin=} plugin A
- * {@link module:packager~GitHubReleasePlugin} object.
+ * @param {GitHubReleasePackagerPlugin=} plugin A
+ * {@link module:packager~GitHubReleasePackagerPlugin} object.
  * @param {Package} packageObject A
  * {@link module:packager.Package} object.
- * @returns {GitHubReleasePlugin} A
- * {@link module:packager~GitHubReleasePlugin} object.
+ * @returns {GitHubReleasePackagerPlugin} A
+ * {@link module:packager~GitHubReleasePackagerPlugin} object.
  */
 function getPlugin (plugin, packageObject) {
   var defaultPluginPath = path.join(path.dirname(__filename), 'lib', 'grp-plugin-default');
-  /** @type {GitHubReleasePlugin} */
+  /** @type {GitHubReleasePackagerPlugin} */
   var defaultPlugin = require(defaultPluginPath).github;
   if (!defaultPlugin) {
     throw Error(`failed to load default plugin '${defaultPluginPath}'.`);
@@ -257,8 +257,8 @@ function shouldAbort (condition, operation, trueText, falseText, detailText) {
  * @param {UpdateOptions=} options An {@link module:packager.UpdatePackage}
  * object.
  * @param {string=} version The version to download.
- * @param {GitHubReleasePlugin=} plugin A
- * {@link module:packager.GitHubReleasePlugin} object.
+ * @param {GitHubReleasePackagerPlugin=} plugin A
+ * {@link module:packager.GitHubReleasePackagerPlugin} object.
  * @returns {Promise<void>} `Promise<void>`
  */
 exports.UpdateBinary = async (options, version, plugin) => {
@@ -377,8 +377,8 @@ exports.UpdateBinary = async (options, version, plugin) => {
  * @param {UpdateOptions=} options An {@link module:packager.UpdatePackage}
  * object.
  * @param {string=} version The version to download.
- * @param {GitHubReleasePlugin=} plugin A
- * {@link module:packager.GitHubReleasePlugin} object.
+ * @param {GitHubReleasePackagerPlugin=} plugin A
+ * {@link module:packager.GitHubReleasePackagerPlugin} object.
  */
 exports.UpdateBinarySync = (options, version, plugin) => {
   var err;

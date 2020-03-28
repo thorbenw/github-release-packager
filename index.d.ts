@@ -15,8 +15,8 @@ export var UpdateOperation: {
     /** Update items, even if unnecessary. */
     force: number;
 };
-export function UpdateBinary(options?: UpdateOptions, version?: string, plugin?: GitHubReleasePlugin): Promise<void>;
-export function UpdateBinarySync(options?: UpdateOptions, version?: string, plugin?: GitHubReleasePlugin): void;
+export function UpdateBinary(options?: UpdateOptions, version?: string, plugin?: GitHubReleasePackagerPlugin): Promise<void>;
+export function UpdateBinarySync(options?: UpdateOptions, version?: string, plugin?: GitHubReleasePackagerPlugin): void;
 export function UpdatePackage(options?: UpdateOptions): Promise<void>;
 export function UpdatePackageSync(options?: UpdateOptions): void;
 export function GetLatestReleaseURL(owner: string, repository: string): Promise<string>;
@@ -30,7 +30,7 @@ export type GitHubRepository = {
 export type GitHubReleaseDownloadURLCallback = (repository: GitHubRepository, version: string) => Promise<string>;
 export type GitHubReleaseProcessBinaryCallback = (file: string, folder: string) => Promise<void>;
 export type GitHubReleaseBinariesCallback = (repository: GitHubRepository, version: string, folder: string) => Promise<any>;
-export type GitHubReleasePlugin = {
+export type GitHubReleasePackagerPlugin = {
     downloadURL?: GitHubReleaseDownloadURLCallback;
     processBinary?: GitHubReleaseProcessBinaryCallback;
     binaries?: GitHubReleaseBinariesCallback;
