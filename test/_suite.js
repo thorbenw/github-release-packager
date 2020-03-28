@@ -24,7 +24,7 @@ describe(`${thisPackage.name} tests`, function () {
     var expected = path.join(path.dirname(__filename), 'package.json');
 
     try {
-      grp.UpdatePackageSync({});
+      grp.UpdatePackageSync();
       throw Error('should have failed');
     } catch (err) {
       assert.ok(err instanceof Error, 'thrown type should be \'Error\'');
@@ -38,7 +38,7 @@ describe(`${thisPackage.name} tests`, function () {
     var expected = path.join(path.dirname(__filename), 'package.json');
 
     try {
-      grp.UpdateBinarySync({}, undefined, undefined);
+      grp.UpdateBinarySync();
       throw Error('should have failed');
     } catch (err) {
       assert.ok(err instanceof Error, 'thrown type should be \'Error\'');

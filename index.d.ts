@@ -16,11 +16,11 @@ export var UpdateOperation: {
     force: number;
 };
 export function UpdateBinary(options?: UpdateOptions, version?: string, plugin?: GitHubReleasePlugin): Promise<void>;
-export function UpdateBinarySync(options: any, version: any, plugin: any): void;
+export function UpdateBinarySync(options?: UpdateOptions, version?: string, plugin?: GitHubReleasePlugin): void;
 export function UpdatePackage(options?: UpdateOptions): Promise<void>;
-export function UpdatePackageSync(options: any): void;
+export function UpdatePackageSync(options?: UpdateOptions): void;
 export function GetLatestReleaseURL(owner: string, repository: string): Promise<string>;
-export function GetLatestReleaseURLSync(owner: any, repository: any): string;
+export function GetLatestReleaseURLSync(owner: string, repository: string): string;
 export function GetNPMVersion(version: string, overlapFactor?: number): string;
 export function GetExecutable(binname: string, options?: UpdateOptions): string;
 export type GitHubRepository = {

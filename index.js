@@ -254,7 +254,7 @@ function shouldAbort (condition, operation, trueText, falseText, detailText) {
  * @param {string=} version The version to download.
  * @param {GitHubReleasePlugin=} plugin A
  * {@link module:packager.GitHubReleasePlugin} object.
- * @returns {Promise<void>}
+ * @returns {Promise<void>} `Promise<void>`
  */
 exports.UpdateBinary = async (options, version, plugin) => {
   options = options || {};
@@ -282,12 +282,13 @@ exports.UpdateBinary = async (options, version, plugin) => {
     var tempFile = uri.split('/').pop();
     var tempFileName = path.join(tempPath, tempFile);
 
+    function cleanup () { // eslint-disable-line no-inner-declarations
+      fs.removeSync(tempPath);
+      console.debug(`Deleted temporary download folder '${tempPath}'.`);
+    }
+
     console.debug(`Downloading '${uri}' ...`);
     // #region Download
-    /* Create an empty file where we can save data */
-    const file = fs.createWriteStream(tempFileName);
-
-    /* Using Promises so that we can use the ASYNC AWAIT syntax */
     await new Promise((resolve, reject) => {
       download({
         uri: uri,
@@ -300,20 +301,36 @@ exports.UpdateBinary = async (options, version, plugin) => {
           'Upgrade-Insecure-Requests': '1',
           'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36'
         },
-        /* GZIP true for most of the websites now, disable it if you don't need it */
         gzip: true
-      }).pipe(file).on('finish', () => {
-        console.debug(`Downloaded to '${tempFileName}'.`);
-        resolve();
-      }).on('error', (error) => {
-        reject(error);
+      }).on('error', request => {
+        reject(Error(`Request failed: ${request}`));
+      }).on('response', response => {
+        var statusText = `${response.statusCode} - ${response.statusMessage}`;
+        switch (response.statusCode) {
+          case 200:
+            console.debug(statusText);
+            response.pipe(fs.createWriteStream(tempFileName), {
+              end: true
+            }).on('error', (error) => {
+              reject(error);
+            }).on('finish', () => {
+              console.debug(`Downloaded to '${tempFileName}'.`);
+              resolve();
+            });
+            break;
+          default:
+            reject(Error(statusText));
+            break;
+        }
       });
     }).catch(err => {
+      cleanup();
       throw err;
     });
     // #endregion
 
     if (!fs.existsSync(tempFileName)) {
+      cleanup();
       throw Error('Download failed.');
     }
 
@@ -322,8 +339,7 @@ exports.UpdateBinary = async (options, version, plugin) => {
 
     await plugin.processBinary(tempFileName, binPath);
 
-    fs.removeSync(tempPath);
-    console.debug(`Deleted temporary download folder '${tempPath}'.`);
+    cleanup();
   } else {
     console.debug('No downloads required.');
   }
@@ -353,6 +369,11 @@ exports.UpdateBinary = async (options, version, plugin) => {
 /**
  * Sync version of [UpdateBinary()]{@link module:packager~UpdateBinary} see
  * there for signature information.
+ * @param {UpdateOptions=} options An {@link module:packager.UpdatePackage}
+ * object.
+ * @param {string=} version The version to download.
+ * @param {GitHubReleasePlugin=} plugin A
+ * {@link module:packager.GitHubReleasePlugin} object.
  */
 exports.UpdateBinarySync = (options, version, plugin) => {
   var err;
@@ -374,7 +395,7 @@ exports.UpdateBinarySync = (options, version, plugin) => {
 /**
  * @param {UpdateOptions=} options An {@link module:packager.UpdatePackage}
  * object.
- * @returns {Promise<void>}
+ * @returns {Promise<void>} `Promise<void>`
  */
 exports.UpdatePackage = async (options) => {
   options = options || {};
@@ -405,6 +426,8 @@ exports.UpdatePackage = async (options) => {
 /**
  * Sync version of [UpdatePackage()]{@link module:packager~UpdatePackage} see
  * there for signature information.
+ * @param {UpdateOptions=} options An {@link module:packager.UpdatePackage}
+ * object.
  */
 exports.UpdatePackageSync = (options) => {
   var err;
@@ -459,7 +482,9 @@ exports.GetLatestReleaseURL = async (owner, repository) => {
 /**
  * Sync version of [GetLatestReleaseURL()]{@link module:packager~GetLatestReleaseURL}
  * see there for signature information.
- * @returns {string}
+ * @param {string} owner The GitHub account hosting the repository.
+ * @param {string} repository The repository name.
+ * @returns {string} `string`
  */
 exports.GetLatestReleaseURLSync = (owner, repository) => {
   var result, err;
@@ -524,7 +549,7 @@ exports.GetNPMVersion = (version, overlapFactor) => {
  * for.
  * @param {UpdateOptions} [options] An {@link module:packager.UpdateOptions}
  * object.
- * @returns {string}
+ * @returns {string} `string`
  */
 exports.GetExecutable = (binname, options) => {
   options = options || {};
