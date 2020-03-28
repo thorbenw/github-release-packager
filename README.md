@@ -109,7 +109,7 @@ In the plugin JavaScript file, export a `github` object having one or more of
 the following properties, all of which have to be `async function`s:
 - `downloadURL(repository, version) => Promise<string>`
 - `processBinary(file, folder) => Promise<void>`
-- `binaries(repository, version, folder) => Promise<object>`
+- `postProcess(repository, version, folder) => Promise<object>`
 
 if your IDE supports it, place a JsDoc comment right above the `github` export
 to help you implementing the plugin, as it exists in the following example.
@@ -132,7 +132,7 @@ exports.github = {
     folder intact to indicate the binaries have been downloaded!
     */
   },
-  binaries: async (repository, version, folder) => {
+  postProcess: async (repository, version, folder) => {
     /*
     Do whatever you need or want, e.g. query files in 'folder' to add or apply
     changes to your code, provide/generate definitio files, etc.
@@ -144,7 +144,7 @@ exports.github = {
     */
     
     return {
-      commandofchoice: "./bin/<version>/executable"
+      command_of_choice: "./bin/<version>/executable"
     }
   }
 }

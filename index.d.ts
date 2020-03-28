@@ -29,11 +29,11 @@ export type GitHubRepository = {
 };
 export type GitHubReleaseDownloadURLCallback = (repository: GitHubRepository, version: string) => Promise<string>;
 export type GitHubReleaseProcessBinaryCallback = (file: string, folder: string) => Promise<void>;
-export type GitHubReleaseBinariesCallback = (repository: GitHubRepository, version: string, folder: string) => Promise<any>;
+export type GitHubReleasePostProcessCallback = (repository: GitHubRepository, version: string, folder: string) => Promise<any>;
 export type GitHubReleasePackagerPlugin = {
     downloadURL?: GitHubReleaseDownloadURLCallback;
     processBinary?: GitHubReleaseProcessBinaryCallback;
-    binaries?: GitHubReleaseBinariesCallback;
+    postProcess?: GitHubReleasePostProcessCallback;
 };
 export type UpdateOptions = {
     /**

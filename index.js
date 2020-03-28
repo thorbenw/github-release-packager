@@ -31,7 +31,7 @@ const deasync = require('deasync');
  */
 
 /**
- * @callback GitHubReleaseBinariesCallback
+ * @callback GitHubReleasePostProcessCallback
  * @param {GitHubRepository} repository
  * @param {string} version
  * @param {string} folder
@@ -42,7 +42,7 @@ const deasync = require('deasync');
  * @typedef {object} GitHubReleasePackagerPlugin
  * @property {GitHubReleaseDownloadURLCallback} [downloadURL]
  * @property {GitHubReleaseProcessBinaryCallback} [processBinary]
- * @property {GitHubReleaseBinariesCallback} [binaries]
+ * @property {GitHubReleasePostProcessCallback} [postProcess]
  */
 
 /**
@@ -173,8 +173,8 @@ function getPlugin (plugin, packageObject) {
     plugin.processBinary = defaultPlugin.processBinary;
   }
 
-  if (!plugin.binaries) {
-    plugin.binaries = defaultPlugin.binaries;
+  if (!plugin.postProcess) {
+    plugin.postProcess = defaultPlugin.postProcess;
   }
 
   return plugin;
@@ -349,7 +349,7 @@ exports.UpdateBinary = async (options, version, plugin) => {
     console.debug('No downloads required.');
   }
 
-  var bin = await plugin.binaries(repository, version, binPath);
+  var bin = await plugin.postProcess(repository, version, binPath);
   var keys = Object.keys(bin);
   if (keys.length > 0) {
     if (!packageObject.packageJson.bin) {
