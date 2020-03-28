@@ -278,7 +278,7 @@ exports.UpdateBinary = async (options, version, plugin) => {
 
   var uri = await plugin.downloadURL(repository, version);
   if (uri && typeof uri === 'string' && uri.trim() !== '') {
-    var tempPath = fs.mkdtempSync(path.join(os.tmpdir(), 'temp-github-releases-dnld-'));
+    var tempPath = fs.mkdtempSync(path.join(os.tmpdir(), `_temp_github-release-packager-${packageObject.packageJson.name}-`));
     var tempFile = uri.split('/').pop();
     var tempFileName = path.join(tempPath, tempFile);
 
