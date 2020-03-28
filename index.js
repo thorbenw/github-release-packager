@@ -513,7 +513,7 @@ exports.GetLatestReleaseURLSync = (owner, repository) => {
  * @param {string} version A version string in arbitrate, but nevertheless
  * dotted, format.
  * @param {number=} overlapFactor The factor to multiply all version digits
- * beyong the 3rd digit with (defaults to 1000 if omitted).
+ * beyond the 3rd digit with (defaults to 1000 if omitted).
  * @returns {string} An npm compatible (i.e. three digit plus patch) version
  * expression.
  */

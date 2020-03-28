@@ -24,7 +24,7 @@ ahead.
 
 <span style="color:red; font-size:150%">
 The current status of this project is 'as needed to package `pandoc`'. Basic
-things might still change, but I'm eager to provide accoring semantic versioning
+things might still change, but I'm eager to provide according semantic versioning
 to save anyone from getting into trouble due to breaking changes.
 </span>
 
@@ -74,15 +74,15 @@ whether the binaries exist or if they yet need to be downloaded. Each call of
 there you want to keep.
 
 If you check in your package to version control, add the `bin` folder to the
-`.gitignore` file - they arent' needed because they will be fetched as needed.
+`.gitignore` file - they aren't needed because they will be fetched as needed.
 This also applies if you publish your package (i.e. also add the `bin` folder to
 an `.npmignore` file)!
 
-#### So why are the binaries already fetched during packge update?
+#### So why are the binaries already fetched during package update?
 To provide a way to do post processing (see below).
 
 ### Plugins
-In order to successfuly download, extract and post process the binaries of a
+In order to successfully download, extract and post process the binaries of a
 GitHub project, you need the following:
 - The correct download URLs
 - The according decompressor(s)
@@ -130,18 +130,18 @@ exports.github = {
     /*
     Do anything required to extract everything from 'file' to 'folder'.
     If an exotic compression algorithm is used, seize the opportunity to
-    get a packe that can handle it.
+    get a package that can handle it.
     The 'file' resides in a temporary folder which will be deleted automatically
     after this function is left.
     The 'folder' is the version specific folder below 'bin' (see above), but
-    of yourse you can put the binaries elsewhere, as needed. Just leave the
+    of course you can put the binaries elsewhere, as needed. Just leave the
     folder intact to indicate the binaries have been downloaded!
     */
   },
   postProcess: async (repository, version, folder) => {
     /*
     Do whatever you need or want, e.g. query files in 'folder' to add or apply
-    changes to your code, provide/generate definitio files, etc.
+    changes to your code, provide/generate definitions files, etc.
     Optionally return an object containing information about what you'd like to
     have in the `bin` object of the package file. If you do so, the object will
     be merged with an existing object in the package file (no plain overwrite).
