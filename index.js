@@ -17,21 +17,21 @@ const deasync = require('deasync');
  */
 
 /**
- * @callback GitHubReleaseDownloadURLCallback
+ * @callback GitHubReleasePackagerDownloadURLCallback
  * @param {GitHubRepository} repository
  * @param {string} version
  * @returns {Promise<string>}
  */
 
 /**
- * @callback GitHubReleaseProcessBinaryCallback
+ * @callback GitHubReleasePackagerProcessBinaryCallback
  * @param {string} file
  * @param {string} folder
  * @returns {Promise<void>}
  */
 
 /**
- * @callback GitHubReleasePostProcessCallback
+ * @callback GitHubReleasePackagerPostProcessCallback
  * @param {GitHubRepository} repository
  * @param {string} version
  * @param {string} folder
@@ -40,9 +40,9 @@ const deasync = require('deasync');
 
 /**
  * @typedef {object} GitHubReleasePackagerPlugin
- * @property {GitHubReleaseDownloadURLCallback} [downloadURL]
- * @property {GitHubReleaseProcessBinaryCallback} [processBinary]
- * @property {GitHubReleasePostProcessCallback} [postProcess]
+ * @property {GitHubReleasePackagerDownloadURLCallback} [getDownloadURL]
+ * @property {GitHubReleasePackagerProcessBinaryCallback} [processBinary]
+ * @property {GitHubReleasePackagerPostProcessCallback} [postProcess]
  */
 
 /**
@@ -165,8 +165,8 @@ function getPlugin (plugin, packageObject) {
     }
   }
 
-  if (!plugin.downloadURL) {
-    plugin.downloadURL = defaultPlugin.downloadURL;
+  if (!plugin.getDownloadURL) {
+    plugin.getDownloadURL = defaultPlugin.getDownloadURL;
   }
 
   if (!plugin.processBinary) {
@@ -281,7 +281,7 @@ exports.UpdateBinary = async (options, version, plugin) => {
     return;
   }
 
-  var uri = await plugin.downloadURL(repository, version);
+  var uri = await plugin.getDownloadURL(repository, version);
   if (uri && typeof uri === 'string' && uri.trim() !== '') {
     var tempPath = fs.mkdtempSync(path.join(os.tmpdir(), `_temp_github-release-packager-${packageObject.packageJson.name}-`));
     var tempFile = uri.split('/').pop();

@@ -107,7 +107,7 @@ the file will be `require()`d by the packager).
 ```
 In the plugin JavaScript file, export a `github` object having one or more of
 the following properties, all of which have to be `async function`s:
-- `downloadURL(repository, version) => Promise<string>`
+- `getDownloadURL(repository, version) => Promise<string>`
 - `processBinary(file, folder) => Promise<void>`
 - `postProcess(repository, version, folder) => Promise<object>`
 
@@ -116,7 +116,7 @@ to help you implementing the plugin, as it exists in the following example.
 ```javascript
 /** @type {import('github-release-packager').GitHubReleasePackagerPlugin} */
 exports.github = {
-  downloadURL: async (repository, version) => {
+  getDownloadURL: async (repository, version) => {
     // return a URL for downloading the requested binaries version
     return `https://alias.domain.tld/${repository.owner}/${repository.name}/somespecialsubpath/customname-verionspec${version}.exoticextension`;
   },
@@ -162,6 +162,4 @@ so, commit and publish the new build.
 
 ToDos
 -----
-- Rename the plugin methods
-  - They're ugly and inconsistent
-  - This means a breaking change, so do it _before_ the first release!
+- Nothing important
