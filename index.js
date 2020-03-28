@@ -133,7 +133,7 @@ function getPackage (options) {
  * {@link module:packager~GitHubReleasePlugin} object.
  */
 function getPlugin (plugin, packageObject) {
-  var defaultPluginPath = path.join(path.dirname(__filename), 'lib', 'github-releases-plugin-default');
+  var defaultPluginPath = path.join(path.dirname(__filename), 'lib', 'grp-plugin-default');
   /** @type {GitHubReleasePlugin} */
   var defaultPlugin = require(defaultPluginPath).github;
   if (!defaultPlugin) {
@@ -142,8 +142,8 @@ function getPlugin (plugin, packageObject) {
 
   if (!plugin) {
     var pluginName;
-    if (packageObject.packageJson.scripts) {
-      pluginName = packageObject.packageJson.scripts.github;
+    if (packageObject.packageJson.grp) {
+      pluginName = packageObject.packageJson.grp.plugin;
     }
     if (typeof pluginName === 'string' && pluginName.trim() !== '') {
       if (!path.isAbsolute(pluginName)) {
@@ -190,7 +190,12 @@ function getRepository (packageObject) {
   /** @type {GitHubRepository} */
   var result = {};
 
-  var repository = packageObject.packageJson.repository;
+  var grp = packageObject.packageJson.grp;
+  if (typeof grp !== 'object') {
+    throw Error('There is no \'grp\' object specified in the package file.');
+  }
+
+  var repository = packageObject.packageJson.grp.repository;
   if (typeof repository !== 'string') {
     throw Error('There is no \'repository\' specified in the package file.');
   }
