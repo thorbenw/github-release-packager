@@ -19,6 +19,7 @@
   "author": "Thorben Wolkersdorfer <thorbenw@nbb.com> (https://www.notebooksbilliger.de/)",
   "license": "MIT",
   "repository": "github:thorbenw/github-release-packager",
+  "readme": "README.md",
   "engines": {
     "node": ">=8.17.0"
   },
