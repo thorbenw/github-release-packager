@@ -422,6 +422,50 @@ exports.UpdatePackage = async (options) => {
   }
 
   packageObject.packageJson.version = latestNPM;
+
+  var relLibPath = path.relative(path.dirname(packageObject.packageFileName), path.join(__dirname, 'lib'));
+  var relLibHidePath = path.join(relLibPath, 'renamebin').replace(/\\/g, '/');
+  var relLibShowPath = path.join(relLibPath, 'restorebin').replace(/\\/g, '/');
+  packageObject.packageJson.scripts = packageObject.packageJson.scripts || {};
+  if (typeof packageObject.packageJson.scripts.prepack !== 'string' || packageObject.packageJson.scripts.prepack.indexOf(relLibHidePath) < 0) {
+    if (typeof packageObject.packageJson.scripts.prepack === 'string' && typeof packageObject.packageJson.scripts.prepack_bak_grp !== 'string') {
+      console.info(`Backing up property '${packageObject.packageFileName}/scripts.prepack' in '${packageObject.packageFileName}/scripts.prepack_bak_grp'.`);
+      packageObject.packageJson.scripts.prepack_bak_grp = packageObject.packageJson.scripts.prepack;
+    }
+    console.info(`Adjusting property '${packageObject.packageFileName}/scripts.prepack' to '${relLibHidePath}'.`);
+    packageObject.packageJson.scripts.prepack = `node "${relLibHidePath}"`;
+  } else {
+    console.debug(`Property '${packageObject.packageFileName}/scripts.prepack' already contains '${relLibHidePath}'.`);
+  }
+  if (typeof packageObject.packageJson.scripts.postpack !== 'string' || packageObject.packageJson.scripts.postpack.indexOf(relLibShowPath) < 0) {
+    if (typeof packageObject.packageJson.scripts.postpack === 'string' && typeof packageObject.packageJson.scripts.postpack_bak_grp !== 'string') {
+      console.info(`Backing up property '${packageObject.packageFileName}/scripts.postpack' in '${packageObject.packageFileName}/scripts.postpack_bak_grp'.`);
+      packageObject.packageJson.scripts.postpack_bak_grp = packageObject.packageJson.scripts.postpack;
+    }
+    console.info(`Adjusting property '${packageObject.packageFileName}/scripts.postpack' to '${relLibShowPath}'.`);
+    packageObject.packageJson.scripts.postpack = `node "${relLibShowPath}"`;
+  } else {
+    console.debug(`Property '${packageObject.packageFileName}/scripts.postpack' already contains '${relLibShowPath}'.`);
+  }
+
+  var npmIgnoreFile = path.join(path.dirname(packageObject.packageFileName), '.npmignore');
+  if (!fs.existsSync(npmIgnoreFile)) {
+    console.debug(`Creating npm ignore file '${npmIgnoreFile}'.`);
+    fs.createFileSync(npmIgnoreFile);
+  }
+  var npmIgnore = [];
+  fs.readFileSync(npmIgnoreFile, { encoding: 'utf8' }).split('\n').forEach(line => {
+    var result = line.trim();
+    if (result) {
+      npmIgnore.push(result);
+    }
+  });
+  if (!npmIgnore.includes('bin.bak')) {
+    console.debug(`Updating npm ignore file '${npmIgnoreFile}'.`);
+    npmIgnore.push(`bin.bak${os.EOL}`);
+    fs.writeFileSync(npmIgnoreFile, npmIgnore.join(os.EOL), { encoding: 'utf8' });
+  }
+
   fs.writeJSONSync(packageObject.packageFileName, packageObject.packageJson, { spaces: 2, encoding: 'utf8', EOL: os.EOL });
   console.info(`Successfully updated version in package file '${packageObject.packageFileName}'.`);
 

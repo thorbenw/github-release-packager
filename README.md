@@ -24,8 +24,8 @@ ahead.
 
 <span style="color:red; font-size:150%">
 The current status of this project is 'as needed to package `pandoc`'. Basic
-things might still change, but I'm eager to provide according semantic versioning
-to save anyone from getting into trouble due to breaking changes.
+things might still change, but I'm eager to provide according semantic
+versioning to save anyone from getting into trouble due to breaking changes.
 </span>
 
 Usage
@@ -69,14 +69,31 @@ folder in your package folder.
 
 ### About the binaries folder
 The exact folder the binaries will be put in is `bin/<version>` to keep track of
-whether the binaries exist or if they yet need to be downloaded. Each call of
+whether the binaries exist or if they still need to be downloaded. Each call of
 `UpdateBinaries()` will entirely erase the `bin` folder, so don't put anything
 there you want to keep.
 
 If you check in your package to version control, add the `bin` folder to the
-`.gitignore` file - they aren't needed because they will be fetched as needed.
-This also applies if you publish your package (i.e. also add the `bin` folder to
-an `.npmignore` file)!
+`.gitignore` file - they aren't required to be in source control because they'll
+be fetched as needed.
+
+When running `npm pack` or `npm publish`, the `bin` folder will be temporarily
+renamed to `bin.bak`, and renamed back to `bin` afterwards.
+>To accomplish this, the `prepack` and `postpack` scripts in `package.json` as
+well as the `.npmignore` file are maintained automatically in each run of
+`UpdatePackage()`. It turned out to be quite hard to exclude the `bin` folder
+through having it in either `.gitignore`, `.npmignore` or both, I couldn't make
+`npm` reliably exclude the whole `bin` folder - maybe because there were entries
+in the `bin` object of `package.json` pointing to items below `bin`, or due to
+some files having names that cannot be excluded ...
+
+>However, npm doesn't complain if binaries pointed to in `package.json` are
+actually missing during `pack` or `publish`. I wasn't able to find accurate info
+on this topic, except what is available in the
+[documentation of `package.json`](https://docs.npmjs.com/files/package.json),
+but it seems to be somewhat outdated. Because in this case I'm the one who's
+doing something 'odd', I didn't raise an issue about this but just went ahead
+with the approach that worked.
 
 #### So why are the binaries already fetched during package update?
 To provide a way to do post processing (see below).
