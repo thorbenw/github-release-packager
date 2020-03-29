@@ -1,13 +1,13 @@
 {
   "name": "github-release-packager",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Package releases of GitHub projects.",
   "main": "index.js",
   "scripts": {
     "pretest": "npm run build",
     "test": "node ./node_modules/mocha/bin/_mocha --timeout 999999 --colors ./test/_suite.js",
-    "ca": "semistandard",
-    "prebuild": "npm run ca",
+    "linter": "semistandard",
+    "prebuild": "npm run linter",
     "build": "tsc -p tsconfig.build.json",
     "postbuild": "tsc -p tsconfig.json"
   },

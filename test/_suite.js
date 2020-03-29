@@ -1,8 +1,6 @@
 const os = require('os');
-// const fs = require('fs-extra');
 const path = require('path');
 const assert = require('assert');
-// const semver = require('semver');
 const grp = require('../index');
 // @ts-ignore
 const thisPackage = require('../package.json');
