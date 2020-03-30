@@ -21,14 +21,7 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
     - name: Prepare installation
-      run: | 
-        npm install semistandard -g
-        rm index.d.ts
-        rm lib/grp-plugin-default.d.ts
-        rm lib/rename.d.ts
-        rm lib/restore.d.ts
-        rm test/_suite.d.ts
-      shell: bash
+      run: npm install semistandard -g
     - run: npm install
     - run: npm test
       env:
