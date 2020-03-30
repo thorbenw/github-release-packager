@@ -1,1 +1,1 @@
-export var github: import('../index').GitHubReleasePackagerPlugin;
+export var github: import('../index').GitHubReleasePackagerDefaultPlugin;

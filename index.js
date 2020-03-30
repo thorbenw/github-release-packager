@@ -10,6 +10,16 @@ const callsites = require('callsites');
 const deasync = require('deasync');
 
 // #region Type Declarations
+/** @typedef {string|number} SectionPart */
+
+/** @typedef {SectionPart[]} VersionSection */
+
+/** @typedef {object} Version
+ * @property {VersionSection} Release The release part of a version.
+ * @property {VersionSection} Prerelease The prerelease part of a version.
+ * @property {VersionSection} BuildMetadata The build metadata part of a version.
+ */
+
 /**
  * @typedef {object} GitHubRepository
  * @property {string} owner
@@ -20,6 +30,13 @@ const deasync = require('deasync');
  * @callback GitHubReleasePackagerDownloadURLCallback
  * @param {GitHubRepository} repository
  * @param {string} version
+ * @returns {Promise<string>}
+ */
+
+/**
+ * @callback GitHubReleasePackagerSemverCallback
+ * @param {string} version
+ * @param {GitHubReleasePackagerDefaultPlugin} defaultPlugin
  * @returns {Promise<string>}
  */
 
@@ -40,9 +57,43 @@ const deasync = require('deasync');
 
 /**
  * @typedef {object} GitHubReleasePackagerPlugin
+ * @property {string} Name
  * @property {GitHubReleasePackagerDownloadURLCallback} [getDownloadURL]
+ * @property {GitHubReleasePackagerSemverCallback} [getSemver]
  * @property {GitHubReleasePackagerProcessBinaryCallback} [processBinary]
  * @property {GitHubReleasePackagerPostProcessCallback} [postProcess]
+ */
+
+/**
+ * @callback GitHubReleasePackagerParseVersionCallback
+ * @param {string} version An arbitrate version specification.
+ * @returns {Promise<Version>} A promise of semver sections version, prerelease
+ * and build metadata.
+ */
+
+/**
+ * @callback GitHubReleasePackagerParseSectionCallback
+ * @param {string} section An arbitrate section string.
+ * @returns {Promise<VersionSection>} A promise of an array of section parts,
+ * each having either numeric or string type.
+ */
+
+/**
+ * @callback GitHubReleasePackagerGetSectionStringCallback
+ * @param {string} section An arbitrate section string.
+ * @returns {Promise<string>} A promise of valid section string, having all
+ * invalid characters replaced with dots.
+ */
+
+/**
+ * @typedef {object} GitHubReleasePackagerExtendedPlugin
+ * @property {GitHubReleasePackagerParseVersionCallback} ParseVersion
+ * @property {GitHubReleasePackagerParseSectionCallback} ParseSection
+ * @property {GitHubReleasePackagerGetSectionStringCallback} GetSectionString
+ */
+
+/**
+ * @typedef {GitHubReleasePackagerPlugin & GitHubReleasePackagerExtendedPlugin} GitHubReleasePackagerDefaultPlugin
  */
 
 /**
@@ -79,6 +130,11 @@ exports.UpdateOperation = {
   /** Update items, even if unnecessary. */
   force: 2
 };
+// #endregion
+
+// #region Variables
+/** @type {GitHubReleasePackagerDefaultPlugin} */
+var defaultPlugin;
 // #endregion
 
 // #region Helpers
@@ -133,12 +189,7 @@ function getPackage (options) {
  * {@link module:packager~GitHubReleasePackagerPlugin} object.
  */
 function getPlugin (plugin, packageObject) {
-  var defaultPluginPath = path.join(path.dirname(__filename), 'lib', 'grp-plugin-default');
-  /** @type {GitHubReleasePackagerPlugin} */
-  var defaultPlugin = require(defaultPluginPath).github;
-  if (!defaultPlugin) {
-    throw Error(`failed to load default plugin '${defaultPluginPath}'.`);
-  }
+  var defaultPlugin = exports.GetDefaultPlugin();
 
   if (!plugin) {
     var pluginName;
@@ -157,6 +208,7 @@ function getPlugin (plugin, packageObject) {
           pluginModule.hasOwnProperty('github') && // eslint-disable-line no-prototype-builtins
           typeof pluginModule.github === 'object') {
         plugin = pluginModule.github;
+        console.info(`Plugin '${plugin.Name}' has been loaded successfully.`);
       } else {
         throw Error(`Plugin '${pluginName}' doesn't export a 'github' object.`);
       }
@@ -167,6 +219,10 @@ function getPlugin (plugin, packageObject) {
 
   if (!plugin.getDownloadURL) {
     plugin.getDownloadURL = defaultPlugin.getDownloadURL;
+  }
+
+  if (!plugin.getSemver) {
+    plugin.getSemver = defaultPlugin.getSemver;
   }
 
   if (!plugin.processBinary) {
@@ -252,6 +308,27 @@ function shouldAbort (condition, operation, trueText, falseText, detailText) {
 // #endregion
 
 // #region Exports
+/**
+ * Returns a default plugin object. If a default plugin has already been loaded,
+ * it won't be loaded again unless enforced.
+ * @param {boolean} [force] Forces reloading the default plugin.
+ * @returns {GitHubReleasePackagerDefaultPlugin} The default plugin instance.
+ */
+exports.GetDefaultPlugin = (force) => {
+  if (!defaultPlugin || force === true) {
+    var defaultPluginPath = path.join(path.dirname(__filename), 'lib', 'grp-plugin-default');
+    console.debug(`Loading default plugin '${defaultPluginPath}'.`);
+    defaultPlugin = require(defaultPluginPath).github;
+    if (!defaultPlugin) {
+      throw Error(`failed to load default plugin '${defaultPluginPath}'.`);
+    } else {
+      console.info(`Default plugin '${defaultPlugin.Name}' has been loaded successfully.`);
+    }
+  }
+
+  return defaultPlugin;
+};
+
 /**
  * Updates the binary files the consuming package wraps.
  * @param {UpdateOptions=} options An {@link module:packager.UpdatePackage}
@@ -407,6 +484,7 @@ exports.UpdatePackage = async (options) => {
 
   var packageObject = getPackage(options);
   var repository = getRepository(packageObject);
+  var plugin = getPlugin(null, packageObject);
 
   var latest = await this.GetLatestReleaseURL(repository.owner, repository.name).catch(err => {
     throw err;
@@ -414,7 +492,11 @@ exports.UpdatePackage = async (options) => {
     return url.split('/').pop();
   });
 
-  var latestNPM = this.GetNPMVersion(latest);
+  var latestNPM = await plugin.getSemver(latest, defaultPlugin);
+  if (semver.valid(latestNPM, { includePrerelease: true }) === null) {
+    throw Error(`The plugin '${plugin.Name}' returned an invalid version expression '${latestNPM}'.`);
+  }
+
   var needUpdate = semver.lt(packageObject.packageJson.version, latestNPM);
 
   if (shouldAbort(!needUpdate, options.operation, 'Package is up to date', 'Package needs update', `current version is [${packageObject.packageJson.version}], latest version is [${latestNPM}]`)) {
@@ -469,7 +551,7 @@ exports.UpdatePackage = async (options) => {
   fs.writeJSONSync(packageObject.packageFileName, packageObject.packageJson, { spaces: 2, encoding: 'utf8', EOL: os.EOL });
   console.info(`Successfully updated version in package file '${packageObject.packageFileName}'.`);
 
-  await this.UpdateBinary(options, latest);
+  await this.UpdateBinary(options, latest, plugin);
 };
 
 /**
@@ -551,46 +633,6 @@ exports.GetLatestReleaseURLSync = (owner, repository) => {
   } else {
     return result;
   }
-};
-
-/**
- * @param {string} version A version string in arbitrate, but nevertheless
- * dotted, format.
- * @param {number=} overlapFactor The factor to multiply all version digits
- * beyond the 3rd digit with (defaults to 1000 if omitted).
- * @returns {string} An npm compatible (i.e. three digit plus patch) version
- * expression.
- */
-exports.GetNPMVersion = (version, overlapFactor) => {
-  if (!overlapFactor || typeof overlapFactor !== 'number') {
-    overlapFactor = 1000;
-  }
-
-  if (typeof version !== 'string') {
-    throw Error(`Parameter 'version' (${version}) is not a string.`);
-  }
-
-  var versionParts = [];
-  version.split('.').forEach(digit => {
-    var versionPart = parseInt(digit);
-    if (isNaN(versionPart)) {
-      versionParts.push(digit);
-    } else {
-      versionParts.push(versionPart);
-    }
-  });
-  if (versionParts.length > 3) {
-    version = `${versionParts[0]}.${versionParts[1]}.`;
-    for (let index = 2; index < versionParts.length; index++) {
-      if (typeof versionParts[index] === 'number') {
-        version += `${versionParts[index] * overlapFactor}`;
-      } else {
-        version += versionParts[index];
-      }
-    }
-  }
-
-  return version;
 };
 
 /**
