@@ -1,6 +1,6 @@
 {
   "name": "github-release-packager",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Package releases of GitHub projects.",
   "main": "index.js",
   "scripts": {

@@ -4,6 +4,7 @@ GitHub Release Packager
 Package releases of GitHub projects.
 
 [![js-semistandard-style](https://img.shields.io/badge/code%20style-semistandard-brightgreen.svg?style=flat-square)](https://github.com/standard/semistandard)
+[![vscode-cspell-style](https://img.shields.io/badge/spell%20check-cSpell-brightgreen.svg?style=flat-square&logo=visual-studio-code)](https://github.com/streetsidesoftware/vscode-spell-checker)
 [![github-release-packager-issues](https://img.shields.io/github/issues/thorbenw/github-release-packager)](https://github.com/thorbenw/github-release-packager)
 [![github-release-packager-style](https://img.shields.io/node/v/github-release-packager)](https://github.com/thorbenw/github-release-packager)
 [![github-release-packager-license](https://img.shields.io/npm/l/github-release-packager)](https://github.com/thorbenw/github-release-packager)
