@@ -7,7 +7,9 @@
     "pretest": "npm run build",
     "test": "node ./node_modules/mocha/bin/_mocha --timeout 999999 --colors ./test/_suite.js",
     "linter": "semistandard",
-    "prebuild": "npm run linter",
+    "prermdecl": "npm run linter",
+    "rmdecl": "node -e \"require('@nbb.com/npmbuildtools/lib/declaration-files').RemoveDeclarations()\"",
+    "prebuild": "npm run rmdecl",
     "build": "tsc -p tsconfig.build.json",
     "postbuild": "tsc -p tsconfig.json"
   },
@@ -28,6 +30,7 @@
     "test": "./test"
   },
   "dependencies": {
+    "@nbb.com/npmbuildtools": "^2.2.13",
     "callsites": "^3.1.0",
     "deasync": "^0.1.19",
     "fs-extra": "^8.0.0",

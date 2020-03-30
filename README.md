@@ -98,10 +98,24 @@ with the approach that worked.
 #### So why are the binaries already fetched during package update?
 To provide a way to do post processing (see below).
 
+### About versions
+The package version is automatically set to the same version as the wrapped
+project.
+If the wrapped project doesn't use versioning compatible to 
+[Semantic Versioning 2.0.0](https://semver.org/) (which is necessary to use
+in npm packages), it's version is converted accordingly.
+The default conversion provided by the default plugin (see below) can convert
+any arbitrate text into a valid version expression, it cannot guarantee
+precedence will work as expected. If the target project is using a versioning
+approach that can guarantee correct precedence processing, but isn't supported
+by the default implementation (e.g. digit 'importance' in right-to-left order or
+the like), you can implement a plugin that will handle the specific format.
+
 ### Plugins
 In order to successfully download, extract and post process the binaries of a
 GitHub project, you need the following:
 - The correct download URLs
+- Version translation
 - The according decompressor(s)
 - An opportunity to post process the whole package update
 
@@ -109,6 +123,8 @@ A default plugin exists that can provide all of the above-mentioned in a default
 way, i.e. it will
 - Provide the standard download URL which points to a `/archive/v<version>.zip`
 file in the repository
+- Convert each arbitrary text into a
+[Semantic Versioning 2.0.0](https://semver.org/) compliant version expression
 - Extract the downloaded file using a ZIP decompressor
 - Do no post processing at all
 
@@ -131,17 +147,32 @@ the file will be `require()`d by the packager).
 In the plugin JavaScript file, export a `github` object having one or more of
 the following properties, all of which have to be `async function`s:
 - `getDownloadURL(repository, version) => Promise<string>`
+- `getSemver(version, defaultPlugin) => Promise<string>`
 - `processBinary(file, folder) => Promise<void>`
 - `postProcess(repository, version, folder) => Promise<object>`
 
-if your IDE supports it, place a JsDoc comment right above the `github` export
+Also add a property `Name` and set it to a string value identifying you plugin
+(e.g. the file name of the plugin JavaScript file).
+
+If your IDE supports it, place a JsDoc comment right above the `github` export
 to help you implementing the plugin, as it exists in the following example.
 ```javascript
 /** @type {import('github-release-packager').GitHubReleasePackagerPlugin} */
 exports.github = {
+  Name: __filename,
   getDownloadURL: async (repository, version) => {
     // return a URL for downloading the requested binaries version
     return `https://alias.domain.tld/${repository.owner}/${repository.name}/somespecialsubpath/customname-verionspec${version}.exoticextension`;
+  },
+  getSemver: async function (version, defaultPlugin) {
+    /*
+    Return a semver compliant version string. If needed, use the methods
+    ParseVersion(), ParseSection() and GetSectionString() provided by the
+    default plugin which is passed in as the defaultPlugin parameter, e.g.
+    var versionObject = defaultPlugin.ParseVersion(version);
+    return versionObject.Release.reverse().join('.');
+    */
+    return defaultPlugin.getSemver(version, defaultPlugin);
   },
   processBinary: async (file, folder) => {
     /*

@@ -15,26 +15,54 @@ export var UpdateOperation: {
     /** Update items, even if unnecessary. */
     force: number;
 };
+export function GetDefaultPlugin(force?: boolean): GitHubReleasePackagerPlugin & GitHubReleasePackagerExtendedPlugin;
 export function UpdateBinary(options?: UpdateOptions, version?: string, plugin?: GitHubReleasePackagerPlugin): Promise<void>;
 export function UpdateBinarySync(options?: UpdateOptions, version?: string, plugin?: GitHubReleasePackagerPlugin): void;
 export function UpdatePackage(options?: UpdateOptions): Promise<void>;
 export function UpdatePackageSync(options?: UpdateOptions): void;
 export function GetLatestReleaseURL(owner: string, repository: string): Promise<string>;
 export function GetLatestReleaseURLSync(owner: string, repository: string): string;
-export function GetNPMVersion(version: string, overlapFactor?: number): string;
 export function GetExecutable(binname: string, options?: UpdateOptions): string;
+export type SectionPart = string | number;
+export type VersionSection = (string | number)[];
+export type Version = {
+    /**
+     * The release part of a version.
+     */
+    Release: (string | number)[];
+    /**
+     * The prerelease part of a version.
+     */
+    Prerelease: (string | number)[];
+    /**
+     * The build metadata part of a version.
+     */
+    BuildMetadata: (string | number)[];
+};
 export type GitHubRepository = {
     owner: string;
     name: string;
 };
 export type GitHubReleasePackagerDownloadURLCallback = (repository: GitHubRepository, version: string) => Promise<string>;
+export type GitHubReleasePackagerSemverCallback = (version: string, defaultPlugin: GitHubReleasePackagerPlugin & GitHubReleasePackagerExtendedPlugin) => Promise<string>;
 export type GitHubReleasePackagerProcessBinaryCallback = (file: string, folder: string) => Promise<void>;
 export type GitHubReleasePackagerPostProcessCallback = (repository: GitHubRepository, version: string, folder: string) => Promise<any>;
 export type GitHubReleasePackagerPlugin = {
+    Name: string;
     getDownloadURL?: GitHubReleasePackagerDownloadURLCallback;
+    getSemver?: GitHubReleasePackagerSemverCallback;
     processBinary?: GitHubReleasePackagerProcessBinaryCallback;
     postProcess?: GitHubReleasePackagerPostProcessCallback;
 };
+export type GitHubReleasePackagerParseVersionCallback = (version: string) => Promise<Version>;
+export type GitHubReleasePackagerParseSectionCallback = (section: string) => Promise<(string | number)[]>;
+export type GitHubReleasePackagerGetSectionStringCallback = (section: string) => Promise<string>;
+export type GitHubReleasePackagerExtendedPlugin = {
+    ParseVersion: GitHubReleasePackagerParseVersionCallback;
+    ParseSection: GitHubReleasePackagerParseSectionCallback;
+    GetSectionString: GitHubReleasePackagerGetSectionStringCallback;
+};
+export type GitHubReleasePackagerDefaultPlugin = GitHubReleasePackagerPlugin & GitHubReleasePackagerExtendedPlugin;
 export type UpdateOptions = {
     /**
      * The operation mode
