@@ -30,6 +30,7 @@ const deasync = require('deasync');
  * @callback GitHubReleasePackagerDownloadURLCallback
  * @param {GitHubRepository} repository
  * @param {string} version
+ * @param {GitHubReleasePackagerDefaultPlugin} defaultPlugin
  * @returns {Promise<string>}
  */
 
@@ -44,6 +45,7 @@ const deasync = require('deasync');
  * @callback GitHubReleasePackagerProcessBinaryCallback
  * @param {string} file
  * @param {string} folder
+ * @param {GitHubReleasePackagerDefaultPlugin} defaultPlugin
  * @returns {Promise<void>}
  */
 
@@ -52,6 +54,7 @@ const deasync = require('deasync');
  * @param {GitHubRepository} repository
  * @param {string} version
  * @param {string} folder
+ * @param {GitHubReleasePackagerDefaultPlugin} defaultPlugin
  * @returns {Promise<object>}
  */
 
@@ -67,6 +70,7 @@ const deasync = require('deasync');
 /**
  * @callback GitHubReleasePackagerParseVersionCallback
  * @param {string} version An arbitrate version specification.
+ * @param {GitHubReleasePackagerDefaultPlugin} defaultPlugin
  * @returns {Promise<Version>} A promise of semver sections version, prerelease
  * and build metadata.
  */
@@ -74,6 +78,7 @@ const deasync = require('deasync');
 /**
  * @callback GitHubReleasePackagerParseSectionCallback
  * @param {string} section An arbitrate section string.
+ * @param {GitHubReleasePackagerDefaultPlugin} defaultPlugin
  * @returns {Promise<VersionSection>} A promise of an array of section parts,
  * each having either numeric or string type.
  */
@@ -81,6 +86,7 @@ const deasync = require('deasync');
 /**
  * @callback GitHubReleasePackagerGetSectionStringCallback
  * @param {string} section An arbitrate section string.
+ * @param {GitHubReleasePackagerDefaultPlugin} defaultPlugin
  * @returns {Promise<string>} A promise of valid section string, having all
  * invalid characters replaced with dots.
  */
@@ -358,7 +364,7 @@ exports.UpdateBinary = async (options, version, plugin) => {
     return;
   }
 
-  var uri = await plugin.getDownloadURL(repository, version);
+  var uri = await plugin.getDownloadURL(repository, version, defaultPlugin);
   if (uri && typeof uri === 'string' && uri.trim() !== '') {
     var tempPath = fs.mkdtempSync(path.join(os.tmpdir(), `_temp_github-release-packager-${packageObject.packageJson.name}-`));
     var tempFile = uri.split('/').pop();
@@ -419,14 +425,14 @@ exports.UpdateBinary = async (options, version, plugin) => {
     fs.removeSync(path.dirname(binPath));
     fs.ensureDirSync(binPath);
 
-    await plugin.processBinary(tempFileName, binPath);
+    await plugin.processBinary(tempFileName, binPath, defaultPlugin);
 
     cleanup();
   } else {
     console.debug('No downloads required.');
   }
 
-  var bin = await plugin.postProcess(repository, version, binPath);
+  var bin = await plugin.postProcess(repository, version, binPath, defaultPlugin);
   var keys = Object.keys(bin);
   if (keys.length > 0) {
     if (!packageObject.packageJson.bin) {
