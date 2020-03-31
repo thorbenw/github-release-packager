@@ -43,10 +43,10 @@ export type GitHubRepository = {
     owner: string;
     name: string;
 };
-export type GitHubReleasePackagerDownloadURLCallback = (repository: GitHubRepository, version: string) => Promise<string>;
+export type GitHubReleasePackagerDownloadURLCallback = (repository: GitHubRepository, version: string, defaultPlugin: GitHubReleasePackagerPlugin & GitHubReleasePackagerExtendedPlugin) => Promise<string>;
 export type GitHubReleasePackagerSemverCallback = (version: string, defaultPlugin: GitHubReleasePackagerPlugin & GitHubReleasePackagerExtendedPlugin) => Promise<string>;
-export type GitHubReleasePackagerProcessBinaryCallback = (file: string, folder: string) => Promise<void>;
-export type GitHubReleasePackagerPostProcessCallback = (repository: GitHubRepository, version: string, folder: string) => Promise<any>;
+export type GitHubReleasePackagerProcessBinaryCallback = (file: string, folder: string, defaultPlugin: GitHubReleasePackagerPlugin & GitHubReleasePackagerExtendedPlugin) => Promise<void>;
+export type GitHubReleasePackagerPostProcessCallback = (repository: GitHubRepository, version: string, folder: string, defaultPlugin: GitHubReleasePackagerPlugin & GitHubReleasePackagerExtendedPlugin) => Promise<any>;
 export type GitHubReleasePackagerPlugin = {
     Name: string;
     getDownloadURL?: GitHubReleasePackagerDownloadURLCallback;
@@ -54,9 +54,9 @@ export type GitHubReleasePackagerPlugin = {
     processBinary?: GitHubReleasePackagerProcessBinaryCallback;
     postProcess?: GitHubReleasePackagerPostProcessCallback;
 };
-export type GitHubReleasePackagerParseVersionCallback = (version: string) => Promise<Version>;
-export type GitHubReleasePackagerParseSectionCallback = (section: string) => Promise<(string | number)[]>;
-export type GitHubReleasePackagerGetSectionStringCallback = (section: string) => Promise<string>;
+export type GitHubReleasePackagerParseVersionCallback = (version: string, defaultPlugin: GitHubReleasePackagerPlugin & GitHubReleasePackagerExtendedPlugin) => Promise<Version>;
+export type GitHubReleasePackagerParseSectionCallback = (section: string, defaultPlugin: GitHubReleasePackagerPlugin & GitHubReleasePackagerExtendedPlugin) => Promise<(string | number)[]>;
+export type GitHubReleasePackagerGetSectionStringCallback = (section: string, defaultPlugin: GitHubReleasePackagerPlugin & GitHubReleasePackagerExtendedPlugin) => Promise<string>;
 export type GitHubReleasePackagerExtendedPlugin = {
     ParseVersion: GitHubReleasePackagerParseVersionCallback;
     ParseSection: GitHubReleasePackagerParseSectionCallback;

@@ -4,6 +4,7 @@ GitHub Release Packager
 Package releases of GitHub projects.
 
 [![js-semistandard-style](https://img.shields.io/badge/code%20style-semistandard-brightgreen.svg?style=flat-square)](https://github.com/standard/semistandard)
+[![vscode-cspell-style](https://img.shields.io/badge/spell%20check-cSpell-brightgreen.svg?style=flat-square&logo=visual-studio-code)](https://github.com/streetsidesoftware/vscode-spell-checker)
 [![github-release-packager-issues](https://img.shields.io/github/issues/thorbenw/github-release-packager)](https://github.com/thorbenw/github-release-packager)
 [![github-release-packager-style](https://img.shields.io/node/v/github-release-packager)](https://github.com/thorbenw/github-release-packager)
 [![github-release-packager-license](https://img.shields.io/npm/l/github-release-packager)](https://github.com/thorbenw/github-release-packager)
@@ -129,7 +130,9 @@ file in the repository
 - Do no post processing at all
 
 If this fits the repository releases you want to package, you're ready to start,
-otherwise you can implement your own plugin.
+otherwise you can implement your own plugin. The default plugin is passed in to
+all plugin methods to make the default implementations available for use as
+needed.
 
 To do so, create a new JavaScript file and point to it in a `plugin` property
 of the `grp` object in the package file (omit the `.js` file extension because
@@ -146,10 +149,10 @@ the file will be `require()`d by the packager).
 ```
 In the plugin JavaScript file, export a `github` object having one or more of
 the following properties, all of which have to be `async function`s:
-- `getDownloadURL(repository, version) => Promise<string>`
-- `getSemver(version, defaultPlugin) => Promise<string>`
-- `processBinary(file, folder) => Promise<void>`
-- `postProcess(repository, version, folder) => Promise<object>`
+- `getDownloadURL(repository, version, defaultPlugin) => Promise<string>`
+- `getSemver(version, defaultPlugin, defaultPlugin) => Promise<string>`
+- `processBinary(file, folder, defaultPlugin) => Promise<void>`
+- `postProcess(repository, version, folder, defaultPlugin) => Promise<object>`
 
 Also add a property `Name` and set it to a string value identifying you plugin
 (e.g. the file name of the plugin JavaScript file).
@@ -160,7 +163,7 @@ to help you implementing the plugin, as it exists in the following example.
 /** @type {import('github-release-packager').GitHubReleasePackagerPlugin} */
 exports.github = {
   Name: __filename,
-  getDownloadURL: async (repository, version) => {
+  getDownloadURL: async (repository, version, defaultPlugin) => {
     // return a URL for downloading the requested binaries version
     return `https://alias.domain.tld/${repository.owner}/${repository.name}/somespecialsubpath/customname-verionspec${version}.exoticextension`;
   },
@@ -174,7 +177,7 @@ exports.github = {
     */
     return defaultPlugin.getSemver(version, defaultPlugin);
   },
-  processBinary: async (file, folder) => {
+  processBinary: async (file, folder, defaultPlugin) => {
     /*
     Do anything required to extract everything from 'file' to 'folder'.
     If an exotic compression algorithm is used, seize the opportunity to
@@ -186,7 +189,7 @@ exports.github = {
     folder intact to indicate the binaries have been downloaded!
     */
   },
-  postProcess: async (repository, version, folder) => {
+  postProcess: async (repository, version, folder, defaultPlugin) => {
     /*
     Do whatever you need or want, e.g. query files in 'folder' to add or apply
     changes to your code, provide/generate definitions files, etc.

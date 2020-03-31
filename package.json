@@ -1,14 +1,14 @@
 {
   "name": "github-release-packager",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Package releases of GitHub projects.",
   "main": "index.js",
   "scripts": {
     "pretest": "npm run build",
     "test": "node ./node_modules/mocha/bin/_mocha --timeout 999999 --colors ./test/_suite.js",
     "linter": "semistandard",
-    "prermdecl": "npm run linter",
     "rmdecl": "node -e \"require('@nbb.com/npmbuildtools/lib/declaration-files').RemoveDeclarations()\"",
+    "postrmdecl": "npm run linter",
     "prebuild": "npm run rmdecl",
     "build": "tsc -p tsconfig.build.json",
     "postbuild": "tsc -p tsconfig.json"
