@@ -112,13 +112,28 @@ approach that can guarantee correct precedence processing, but isn't supported
 by the default implementation (e.g. digit 'importance' in right-to-left order or
 the like), you can implement a plugin that will handle the specific format.
 
+### About executables
+The downloaded binaries can differ depending on arbitrate conditions (in the
+vast majority of all cases different binary downloads will occur due to the
+platform and architecture) and may have quite different layouts, i.e. folder
+structures and binary names.
+
+To make calling the executables as uniform as possible, information about
+executables can be provided during the process of updating the binaries, which
+can later be used to look up the executables in a platform- and architecture-
+independent call `GetExecutable()`.
+
+If an executable is meant to be added to the `bin` object of the package file,
+this is also possible, but without any distinction of neither platform nor
+architecture or any other condition.
+
 ### Plugins
 In order to successfully download, extract and post process the binaries of a
 GitHub project, you need the following:
 - The correct download URLs
 - Version translation
 - The according decompressor(s)
-- An opportunity to post process the whole package update
+- An opportunity to post-process the whole package update
 
 A default plugin exists that can provide all of the above-mentioned in a default
 way, i.e. it will
@@ -152,7 +167,8 @@ the following properties, all of which have to be `async function`s:
 - `getDownloadURL(repository, version, defaultPlugin) => Promise<string>`
 - `getSemver(version, defaultPlugin, defaultPlugin) => Promise<string>`
 - `processBinary(file, folder, defaultPlugin) => Promise<void>`
-- `postProcess(repository, version, folder, defaultPlugin) => Promise<object>`
+- `getExecutables(repository, version, folder, defaultPlugin) => Promise<object>`
+- `postProcess(repository, version, folder, executables, defaultPlugin) => Promise<object>`
 
 Also add a property `Name` and set it to a string value identifying you plugin
 (e.g. the file name of the plugin JavaScript file).
@@ -160,6 +176,8 @@ Also add a property `Name` and set it to a string value identifying you plugin
 If your IDE supports it, place a JsDoc comment right above the `github` export
 to help you implementing the plugin, as it exists in the following example.
 ```javascript
+const path = require('path');
+
 /** @type {import('github-release-packager').GitHubReleasePackagerPlugin} */
 exports.github = {
   Name: __filename,
@@ -189,7 +207,41 @@ exports.github = {
     folder intact to indicate the binaries have been downloaded!
     */
   },
-  postProcess: async (repository, version, folder, defaultPlugin) => {
+  getExecutables: async (repository, version, folder, defaultPlugin) => {
+    /*
+    Collect and return information about executables contained in the binaries.
+    The path of the executables may differ depending on platform and/or
+    architecture or reside in subfolders containing the version - all
+    relevant information available from other steps is made available through
+    the parameters to make this task as easy as possible.
+    The object returned will be written to the package file and all executables
+    can be obtained through multiple GetExecutable*() methods on module and
+    plugin level that search for the specified label, platform and architecture. 
+    The platform and architecture to look up are taken from the global
+    `platform` and `arch` properties of the globally available `process` object
+    and will also accept properties named `default` as fallbacks.
+    */
+    return {
+      myexecutable: { // this is the label to use later in the GetExecutable*() methods
+        win32: {
+          // on Windows(TM) platforms, the executable name is
+          // always the same regardless of the platform.
+          default: path.join(folder, 'executable.exe')
+        },
+        linux: {
+          // on linux, only a 64-bit executable is available.
+          x64: path.join(folder, 'bin', 'executable')
+        },
+        default: {
+          // on all other platforms the executable is available for all
+          // possible platforms and has the same name everywhere
+          // (remember this is an example only!)
+          default: path.join(folder, 'executable')
+        }
+      }
+    };
+  },
+  postProcess: async (repository, version, folder, executables, defaultPlugin) => {
     /*
     Do whatever you need or want, e.g. query files in 'folder' to add or apply
     changes to your code, provide/generate definitions files, etc.
