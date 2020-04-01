@@ -102,15 +102,27 @@ To provide a way to do post processing (see below).
 ### About versions
 The package version is automatically set to the same version as the wrapped
 project.
+
 If the wrapped project doesn't use versioning compatible to 
 [Semantic Versioning 2.0.0](https://semver.org/) (which is necessary to use
 in npm packages), it's version is converted accordingly.
+
 The default conversion provided by the default plugin (see below) can convert
 any arbitrate text into a valid version expression, it cannot guarantee
 precedence will work as expected. If the target project is using a versioning
 approach that can guarantee correct precedence processing, but isn't supported
 by the default implementation (e.g. digit 'importance' in right-to-left order or
 the like), you can implement a plugin that will handle the specific format.
+
+To enable publishing more than one wrapper packages for a single version of the
+wrapped project (in case something went wrong during build due to changes in
+the source package or other, probably inadequately tested updates), a suffix can
+be specified in the `versionSuffix` property of the `grp` object in the package
+file in order to re-publish a wrapper package for the same project version with
+a unique version. A specified suffix will be appended to the converted (semver
+compatible) version, separated by a dot. Make sure you specify a suffix which
+takes precedence over an already published wrapper version (e.g. simply specify
+`"1"`)! 
 
 ### About executables
 The downloaded binaries can differ depending on arbitrate conditions (in the

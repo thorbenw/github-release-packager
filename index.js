@@ -587,6 +587,13 @@ exports.UpdatePackage = async (options) => {
   if (semver.valid(latestNPM, { includePrerelease: true }) === null) {
     throw Error(`The plugin '${plugin.Name}' returned an invalid version expression '${latestNPM}'.`);
   }
+  if (packageObject.packageJson.grp && packageObject.packageJson.grp.versionSuffix) {
+    var suffix = packageObject.packageJson.grp.versionSuffix;
+    latestNPM += `.${suffix}`;
+    if (semver.valid(latestNPM, { includePrerelease: true }) === null) {
+      throw Error(`The version suffix '${suffix}' from '${packageObject.packageFileName}/grp/versionSuffix' is invalid.`);
+    }
+  }
 
   var needUpdate = semver.lt(packageObject.packageJson.version, latestNPM);
 
