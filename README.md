@@ -135,9 +135,16 @@ executables can be provided during the process of updating the binaries, which
 can later be used to look up the executables in a platform- and architecture-
 independent call `GetExecutable()`.
 
+In supported platforms, the file permissions for each executable provided will
+be set to umask `0o755` (`rwxr-xr-x`), or to a value configured in property
+`executablesUmask` of the `grp` object in the package file.
+If the configured value is a string expression, it is expected to be in octal
+representation. If the value is a numeric value, it will be used without
+further conversion nor parsing.
+
 If an executable is meant to be added to the `bin` object of the package file,
 this is also possible, but without any distinction of neither platform nor
-architecture or any other condition.
+architecture or any other condition, and without support for umask/chmod.
 
 ### Plugins
 In order to successfully download, extract and post process the binaries of a
