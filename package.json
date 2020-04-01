@@ -13,6 +13,11 @@
     "build": "tsc -p tsconfig.build.json",
     "postbuild": "tsc -p tsconfig.json"
   },
+  "os": [
+    "win32",
+    "linux",
+    "darwin"
+  ],
   "keywords": [
     "npm",
     "github",
