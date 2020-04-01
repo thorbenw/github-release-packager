@@ -50,10 +50,20 @@ const deasync = require('deasync');
  */
 
 /**
+ * @callback GitHubReleasePackagerExecutablesCallback
+ * @param {GitHubRepository} repository
+ * @param {string} version
+ * @param {string} folder
+ * @param {GitHubReleasePackagerDefaultPlugin} defaultPlugin
+ * @returns {Promise<object>}
+ */
+
+/**
  * @callback GitHubReleasePackagerPostProcessCallback
  * @param {GitHubRepository} repository
  * @param {string} version
  * @param {string} folder
+ * @param {object} executables
  * @param {GitHubReleasePackagerDefaultPlugin} defaultPlugin
  * @returns {Promise<object>}
  */
@@ -64,6 +74,7 @@ const deasync = require('deasync');
  * @property {GitHubReleasePackagerDownloadURLCallback} [getDownloadURL]
  * @property {GitHubReleasePackagerSemverCallback} [getSemver]
  * @property {GitHubReleasePackagerProcessBinaryCallback} [processBinary]
+ * @property {GitHubReleasePackagerExecutablesCallback} [getExecutables]
  * @property {GitHubReleasePackagerPostProcessCallback} [postProcess]
  */
 
@@ -92,10 +103,21 @@ const deasync = require('deasync');
  */
 
 /**
+ * @callback GitHubReleasePackagerGetExecutableCallback
+ * @param {string} executableName The label of the binary to fetch the full file
+ * path and name for.
+ * @param {object} executables An object containing executable information as
+ * returned by {@link module:packager.GitHubReleasePackagerExecutablesCallback}.
+ * @param {GitHubReleasePackagerDefaultPlugin} defaultPlugin
+ * @returns {Promise<string>} `string`
+ */
+
+/**
  * @typedef {object} GitHubReleasePackagerExtendedPlugin
  * @property {GitHubReleasePackagerParseVersionCallback} ParseVersion
  * @property {GitHubReleasePackagerParseSectionCallback} ParseSection
  * @property {GitHubReleasePackagerGetSectionStringCallback} GetSectionString
+ * @property {GitHubReleasePackagerGetExecutableCallback} GetExecutable
  */
 
 /**
@@ -235,6 +257,10 @@ function getPlugin (plugin, packageObject) {
     plugin.processBinary = defaultPlugin.processBinary;
   }
 
+  if (!plugin.getExecutables) {
+    plugin.getExecutables = defaultPlugin.getExecutables;
+  }
+
   if (!plugin.postProcess) {
     plugin.postProcess = defaultPlugin.postProcess;
   }
@@ -310,6 +336,51 @@ function shouldAbort (condition, operation, trueText, falseText, detailText) {
   }
 
   return false;
+}
+
+/**
+ * Copies all path specifications found during traversing an object and converts
+ * them to absolute or relative paths if needed.
+ * @param {'absolute'|'relative'} pathKind The kind of path to convert all
+ * copied paths to.
+ * @param {string} rootPath The root folder to use as the 'from' path during
+ * path kind conversions from absolute to relative or vice versa.
+ * @param {object} object The object to traverse.
+ * @returns {object} A copy of the input `object` containing the desired kind of
+ * paths.
+ */
+function copyPaths (pathKind, rootPath, object) {
+  if (typeof object !== 'object') {
+    throw Error(`Parameter 'object' is not an object: [${object}]`);
+  }
+
+  var result = {};
+  Object.keys(object).forEach(key => {
+    var propertyValue = object[key];
+    var propertyType = typeof propertyValue;
+    switch (propertyType) {
+      case 'string':
+        switch (pathKind) {
+          case 'absolute':
+            if (!path.isAbsolute(propertyValue)) {
+              result[key] = path.resolve(rootPath, propertyValue);
+            }
+            break;
+          case 'relative':
+            if (path.isAbsolute(propertyValue)) {
+              result[key] = path.relative(rootPath, propertyValue).replace(/\\/g, '/');
+            }
+            break;
+        }
+        break;
+      case 'object':
+        result[key] = copyPaths(pathKind, rootPath, propertyValue);
+        break;
+      default:
+        throw Error(`Type of property 'key' has unsupported type '${propertyType}'`);
+    }
+  });
+  return result;
 }
 // #endregion
 
@@ -422,8 +493,9 @@ exports.UpdateBinary = async (options, version, plugin) => {
       throw Error('Download failed.');
     }
 
-    fs.removeSync(path.dirname(binPath));
-    fs.ensureDirSync(binPath);
+    await fs.remove(path.dirname(binPath)).then(() => {
+      fs.ensureDirSync(binPath);
+    });
 
     await plugin.processBinary(tempFileName, binPath, defaultPlugin);
 
@@ -432,7 +504,18 @@ exports.UpdateBinary = async (options, version, plugin) => {
     console.debug('No downloads required.');
   }
 
-  var bin = await plugin.postProcess(repository, version, binPath, defaultPlugin);
+  var updatePackageJson = false;
+
+  var executables = await plugin.getExecutables(repository, version, binPath, defaultPlugin);
+  if (typeof executables === 'object') {
+    packageObject.packageJson.grp.executables = copyPaths('relative', path.dirname(packageObject.packageFileName), executables);
+    updatePackageJson = true;
+  } else {
+    console.debug('No executables need to be updated. Skipping post processing.');
+    return;
+  }
+
+  var bin = await plugin.postProcess(repository, version, binPath, executables, defaultPlugin);
   var keys = Object.keys(bin);
   if (keys.length > 0) {
     if (!packageObject.packageJson.bin) {
@@ -447,21 +530,23 @@ exports.UpdateBinary = async (options, version, plugin) => {
       packageObject.packageJson.bin[key] = relPath;
     });
 
-    fs.writeJSONSync(packageObject.packageFileName, packageObject.packageJson, { spaces: 2, encoding: 'utf8', EOL: os.EOL });
-    console.debug(`Successfully updated binaries in package file '${packageObject.packageFileName}'.`);
+    updatePackageJson = true;
   } else {
     console.debug('No binaries need to be updated.');
+  }
+
+  if (updatePackageJson) {
+    fs.writeJSONSync(packageObject.packageFileName, packageObject.packageJson, { spaces: 2, encoding: 'utf8', EOL: os.EOL });
+    console.debug(`Successfully updated package file '${packageObject.packageFileName}'.`);
   }
 };
 
 /**
  * Sync version of [UpdateBinary()]{@link module:packager~UpdateBinary} see
  * there for signature information.
- * @param {UpdateOptions=} options An {@link module:packager.UpdatePackage}
- * object.
- * @param {string=} version The version to download.
- * @param {GitHubReleasePackagerPlugin=} plugin A
- * {@link module:packager.GitHubReleasePackagerPlugin} object.
+ * @param {UpdateOptions=} options
+ * @param {string=} version
+ * @param {GitHubReleasePackagerPlugin=} plugin
  */
 exports.UpdateBinarySync = (options, version, plugin) => {
   var err;
@@ -501,6 +586,13 @@ exports.UpdatePackage = async (options) => {
   var latestNPM = await plugin.getSemver(latest, defaultPlugin);
   if (semver.valid(latestNPM, { includePrerelease: true }) === null) {
     throw Error(`The plugin '${plugin.Name}' returned an invalid version expression '${latestNPM}'.`);
+  }
+  if (packageObject.packageJson.grp && packageObject.packageJson.grp.versionSuffix) {
+    var suffix = packageObject.packageJson.grp.versionSuffix;
+    latestNPM += `.${suffix}`;
+    if (semver.valid(latestNPM, { includePrerelease: true }) === null) {
+      throw Error(`The version suffix '${suffix}' from '${packageObject.packageFileName}/grp/versionSuffix' is invalid.`);
+    }
   }
 
   var needUpdate = semver.lt(packageObject.packageJson.version, latestNPM);
@@ -563,8 +655,7 @@ exports.UpdatePackage = async (options) => {
 /**
  * Sync version of [UpdatePackage()]{@link module:packager~UpdatePackage} see
  * there for signature information.
- * @param {UpdateOptions=} options An {@link module:packager.UpdatePackage}
- * object.
+ * @param {UpdateOptions=} options
  */
 exports.UpdatePackageSync = (options) => {
   var err;
@@ -619,8 +710,8 @@ exports.GetLatestReleaseURL = async (owner, repository) => {
 /**
  * Sync version of [GetLatestReleaseURL()]{@link module:packager~GetLatestReleaseURL}
  * see there for signature information.
- * @param {string} owner The GitHub account hosting the repository.
- * @param {string} repository The repository name.
+ * @param {string} owner
+ * @param {string} repository
  * @returns {string} `string`
  */
 exports.GetLatestReleaseURLSync = (owner, repository) => {
@@ -642,24 +733,50 @@ exports.GetLatestReleaseURLSync = (owner, repository) => {
 };
 
 /**
- * @param {string} binname The name of the binary to get the executable path
- * for.
+ * @param {string} executableName The label of the binary to fetch the full file
+ * path and name for.
  * @param {UpdateOptions} [options] An {@link module:packager.UpdateOptions}
  * object.
- * @returns {string} `string`
+ * @returns {Promise<string>} `string`
  */
-exports.GetExecutable = (binname, options) => {
+exports.GetExecutable = async (executableName, options) => {
   options = options || {};
 
   var packageObject = getPackage(options);
-  if (!packageObject.packageJson.bin) {
+  if (!packageObject.packageJson.grp) {
     return '';
   }
 
-  var binPath = packageObject.packageJson.bin[binname] || '';
-  if (binPath && binPath.trim() !== '' && !path.isAbsolute(binPath)) {
-    binPath = path.resolve(path.dirname(packageObject.packageFileName), binPath);
+  if (!packageObject.packageJson.grp.executables) {
+    return '';
   }
-  return binPath;
+
+  var plugin = this.GetDefaultPlugin();
+  return plugin.GetExecutable(executableName, copyPaths('absolute', path.dirname(packageObject.packageFileName), packageObject.packageJson.grp.executables), plugin);
+};
+
+/**
+ * Sync version of [GetExecutable()]{@link module:packager~GetExecutable}
+ * see there for signature information.
+ * @param {string} executableName
+ * @param {UpdateOptions} [options]
+ * @returns {string} `string`
+ */
+exports.GetExecutableSync = (executableName, options) => {
+  var result, err;
+  exports.GetExecutable(executableName, options).then((executable) => {
+    result = executable;
+  }).catch(reason => {
+    result = '';
+    err = reason;
+  });
+  while (result === undefined) { // eslint-disable-line no-unmodified-loop-condition
+    deasync.sleep(100);
+  }
+  if (err) {
+    throw err;
+  } else {
+    return result;
+  }
 };
 // #endregion

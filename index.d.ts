@@ -22,7 +22,8 @@ export function UpdatePackage(options?: UpdateOptions): Promise<void>;
 export function UpdatePackageSync(options?: UpdateOptions): void;
 export function GetLatestReleaseURL(owner: string, repository: string): Promise<string>;
 export function GetLatestReleaseURLSync(owner: string, repository: string): string;
-export function GetExecutable(binname: string, options?: UpdateOptions): string;
+export function GetExecutable(executableName: string, options?: UpdateOptions): Promise<string>;
+export function GetExecutableSync(executableName: string, options?: UpdateOptions): string;
 export type SectionPart = string | number;
 export type VersionSection = (string | number)[];
 export type Version = {
@@ -46,21 +47,25 @@ export type GitHubRepository = {
 export type GitHubReleasePackagerDownloadURLCallback = (repository: GitHubRepository, version: string, defaultPlugin: GitHubReleasePackagerPlugin & GitHubReleasePackagerExtendedPlugin) => Promise<string>;
 export type GitHubReleasePackagerSemverCallback = (version: string, defaultPlugin: GitHubReleasePackagerPlugin & GitHubReleasePackagerExtendedPlugin) => Promise<string>;
 export type GitHubReleasePackagerProcessBinaryCallback = (file: string, folder: string, defaultPlugin: GitHubReleasePackagerPlugin & GitHubReleasePackagerExtendedPlugin) => Promise<void>;
-export type GitHubReleasePackagerPostProcessCallback = (repository: GitHubRepository, version: string, folder: string, defaultPlugin: GitHubReleasePackagerPlugin & GitHubReleasePackagerExtendedPlugin) => Promise<any>;
+export type GitHubReleasePackagerExecutablesCallback = (repository: GitHubRepository, version: string, folder: string, defaultPlugin: GitHubReleasePackagerPlugin & GitHubReleasePackagerExtendedPlugin) => Promise<any>;
+export type GitHubReleasePackagerPostProcessCallback = (repository: GitHubRepository, version: string, folder: string, executables: any, defaultPlugin: GitHubReleasePackagerPlugin & GitHubReleasePackagerExtendedPlugin) => Promise<any>;
 export type GitHubReleasePackagerPlugin = {
     Name: string;
     getDownloadURL?: GitHubReleasePackagerDownloadURLCallback;
     getSemver?: GitHubReleasePackagerSemverCallback;
     processBinary?: GitHubReleasePackagerProcessBinaryCallback;
+    getExecutables?: GitHubReleasePackagerExecutablesCallback;
     postProcess?: GitHubReleasePackagerPostProcessCallback;
 };
 export type GitHubReleasePackagerParseVersionCallback = (version: string, defaultPlugin: GitHubReleasePackagerPlugin & GitHubReleasePackagerExtendedPlugin) => Promise<Version>;
 export type GitHubReleasePackagerParseSectionCallback = (section: string, defaultPlugin: GitHubReleasePackagerPlugin & GitHubReleasePackagerExtendedPlugin) => Promise<(string | number)[]>;
 export type GitHubReleasePackagerGetSectionStringCallback = (section: string, defaultPlugin: GitHubReleasePackagerPlugin & GitHubReleasePackagerExtendedPlugin) => Promise<string>;
+export type GitHubReleasePackagerGetExecutableCallback = (executableName: string, executables: any, defaultPlugin: GitHubReleasePackagerPlugin & GitHubReleasePackagerExtendedPlugin) => Promise<string>;
 export type GitHubReleasePackagerExtendedPlugin = {
     ParseVersion: GitHubReleasePackagerParseVersionCallback;
     ParseSection: GitHubReleasePackagerParseSectionCallback;
     GetSectionString: GitHubReleasePackagerGetSectionStringCallback;
+    GetExecutable: GitHubReleasePackagerGetExecutableCallback;
 };
 export type GitHubReleasePackagerDefaultPlugin = GitHubReleasePackagerPlugin & GitHubReleasePackagerExtendedPlugin;
 export type UpdateOptions = {
