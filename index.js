@@ -509,6 +509,46 @@ exports.UpdateBinary = async (options, version, plugin) => {
   var executables = await plugin.getExecutables(repository, version, binPath, defaultPlugin);
   if (typeof executables === 'object') {
     packageObject.packageJson.grp.executables = copyPaths('relative', path.dirname(packageObject.packageFileName), executables);
+    // #region  Update umask
+    // In linux and darwin only
+    var setUmaskPlatforms = ['linux', 'darwin'];
+
+    if (setUmaskPlatforms.includes(process.platform)) {
+      // default: rwxr-xr-x
+      var umask = 0o755;
+
+      // fetch configuration setting, if present
+      var configUmask = packageObject.packageJson.grp.executablesUmask;
+      var configUmaskType = typeof configUmask;
+      switch (configUmaskType) {
+        case 'undefined':
+          break;
+        case 'string':
+          umask = parseInt(configUmask, 8);
+          break;
+        case 'number':
+          umask = configUmask;
+          break;
+        default:
+          throw Error(`Property value from '${packageObject.packageFileName}/grp/executablesUmask' has and invalid type '${configUmaskType}' (value: [${configUmask}]).`);
+      }
+
+      // apply umask using chmod
+      const cp = require('child_process');
+      Object.keys(executables).forEach(executableName => {
+        var executable = executables[executableName];
+        Object.keys(executable).forEach(platformName => {
+          var platform = executable[platformName];
+          if (setUmaskPlatforms.includes(platformName)) {
+            Object.keys(platform).forEach(architectureName => {
+              var chmodArgs = `${umask.toString(8)} ${platform[architectureName]}`;
+              cp.execSync(`chmod ${chmodArgs}`, { stdio: 'inherit' });
+            });
+          }
+        });
+      });
+    }
+    // #endregion
     updatePackageJson = true;
   } else {
     console.debug('No executables need to be updated. Skipping post processing.');
